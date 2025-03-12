@@ -15,60 +15,60 @@ from openEMS.physical_constants import *
 
 
 class simulation_port:
-  """
-    port object
-    for in-plane port, parameter target_layername is specified
-    for via port, parameters from_layername and to_layername are specified for the metals above and below   
-  """
-  
-  def __init__ (self, portnumber, voltage, port_Z0, source_layernum, target_layername=None, from_layername=None, to_layername=None, direction='x'):
-    self.portnumber = portnumber
-    self.source_layernum = source_layernum        # source for port geometry is a GDSII layer, just one port per layer
-    self.target_layername = target_layername      # target layer where we create the port, if specified we create in-plane port
-    self.from_layername  = from_layername         # layer on one end of via port, used if target_layername is None
-    self.to_layername    = to_layername           # layer on other  end of via port
-    self.reversed_direction = ('-' in direction)  # detect reversed port direction
-    self.direction  = direction.replace('-', '')  # remove sign that before sending to openEMS
-    self.direction  = self.direction.replace('+', '')  # just in case users might specify positive sign in direction string
+    """
+        port object
+        for in-plane port, parameter target_layername is specified
+        for via port, parameters from_layername and to_layername are specified for the metals above and below   
+    """
     
-    self.port_Z0 = port_Z0
-    self.voltage = voltage
-    self.CSXport = None
+    def __init__ (self, portnumber, voltage, port_Z0, source_layernum, target_layername=None, from_layername=None, to_layername=None, direction='x'):
+        self.portnumber = portnumber
+        self.source_layernum = source_layernum        # source for port geometry is a GDSII layer, just one port per layer
+        self.target_layername = target_layername      # target layer where we create the port, if specified we create in-plane port
+        self.from_layername  = from_layername         # layer on one end of via port, used if target_layername is None
+        self.to_layername    = to_layername           # layer on other  end of via port
+        self.reversed_direction = ('-' in direction)  # detect reversed port direction
+        self.direction  = direction.replace('-', '')  # remove sign that before sending to openEMS
+        self.direction  = self.direction.replace('+', '')  # just in case users might specify positive sign in direction string
+        
+        self.port_Z0 = port_Z0
+        self.voltage = voltage
+        self.CSXport = None
 
-  def set_CSXport (self, CSXport):
-    self.CSXport = CSXport  
+    def set_CSXport (self, CSXport):
+        self.CSXport = CSXport  
 
-  def __str__ (self):
-    # string representation 
-    mystr = 'Port ' + str(self.portnumber) + ' voltage = ' + str(self.voltage) + ' GDS source layer = ' + str(self.source_layernum) + ' target layer = ' + str(self.target_layername) + ' direction = ' + str(self.direction)
-    return mystr
+    def __str__ (self):
+        # string representation 
+        mystr = 'Port ' + str(self.portnumber) + ' voltage = ' + str(self.voltage) + ' GDS source layer = ' + str(self.source_layernum) + ' target layer = ' + str(self.target_layername) + ' direction = ' + str(self.direction)
+        return mystr
   
 
 class all_simulation_ports:
-  """
-  all simulation ports object
-  """
-  
-  def __init__ (self):
-      self.ports = []
-      self.portcount = 0
-      self.portlayers = []
+    """
+    all simulation ports object
+    """
+    
+    def __init__ (self):
+        self.ports = []
+        self.portcount = 0
+        self.portlayers = []
 
-  def add_port (self, port):
-      self.ports.append(port)
-      self.portcount = len(self.ports)
-      self.portlayers.append(port.source_layernum)
+    def add_port (self, port):
+        self.ports.append(port)
+        self.portcount = len(self.ports)
+        self.portlayers.append(port.source_layernum)
 
-  def get_port_by_layernumber (self, layernum):  # special GDSII layer for ports only, one port per layer, so we have 1:1 mapping
-      found = None
-      for port in self.ports:
-          if port.source_layernum == layernum:
-              found = port
-              break
-      return found       
-  
-  def get_port_by_number (self, portnum):
-      return self.ports[portnum-1] 
+    def get_port_by_layernumber (self, layernum):  # special GDSII layer for ports only, one port per layer, so we have 1:1 mapping
+        found = None
+        for port in self.ports:
+            if port.source_layernum == layernum:
+                found = port
+                break
+        return found       
+    
+    def get_port_by_number (self, portnum):
+        return self.ports[portnum-1] 
 
 
 def addGeometry_to_CSX (CSX, excite_portnumbers,simulation_ports,FDTD, materials_list, dielectrics_list, metals_list, allpolygons):
@@ -183,38 +183,38 @@ def addPorts_to_CSX (CSX, excite_portnumbers,simulation_ports,FDTD, materials_li
                         zmin = port_metal.zmin
                         zmax = port_metal.zmax
                     else:
-                       # via port 
-                       if port.from_layername == 'GND': # special case bottom of simulation box
-                         zmin_from = 0
-                         zmax_from = 0
-                       else:
-                         from_metal = metals_list.getbylayername(port.from_layername)
-                         if from_metal==None:
-                            print('[ERROR] Invalid layer ' , port.from_layername, ' in port definition, not found in XML stackup file!')
-                            sys.exit(1)                             
-                         zmin_from  = from_metal.zmin
-                         zmax_from  = from_metal.zmax
+                        # via port 
+                        if port.from_layername == 'GND': # special case bottom of simulation box
+                            zmin_from = 0
+                            zmax_from = 0
+                        else:
+                            from_metal = metals_list.getbylayername(port.from_layername)
+                            if from_metal==None:
+                                print('[ERROR] Invalid layer ' , port.from_layername, ' in port definition, not found in XML stackup file!')
+                                sys.exit(1)                             
+                            zmin_from  = from_metal.zmin
+                            zmax_from  = from_metal.zmax
                        
-                       if port.to_layername == 'GND': # special case bottom of simulation box
-                         zmin_to = 0
-                         zmax_to = 0
-                       else:
-                         to_metal   = metals_list.getbylayername(port.to_layername)
-                         if to_metal==None:
-                            print('[ERROR] Invalid layer ' , port.to_layername, ' in port definition, not found in XML stackup file!')
-                            sys.exit(1)                             
-                         zmin_to    = to_metal.zmin
-                         zmax_to    = to_metal.zmax
-                       
-                       # if necessary, swap from and to position
-                       if zmin_from < zmin_to:
-                           # from layer is lower layer
-                           zmin = zmax_from
-                           zmax = zmin_to
-                       else:    
-                           # to layer is lower layer
-                           zmin = zmax_to
-                           zmax = zmin_from
+                        if port.to_layername == 'GND': # special case bottom of simulation box
+                            zmin_to = 0
+                            zmax_to = 0
+                        else:
+                            to_metal   = metals_list.getbylayername(port.to_layername)
+                            if to_metal==None:
+                                print('[ERROR] Invalid layer ' , port.to_layername, ' in port definition, not found in XML stackup file!')
+                                sys.exit(1)                             
+                            zmin_to    = to_metal.zmin
+                            zmax_to    = to_metal.zmax
+                        
+                        # if necessary, swap from and to position
+                        if zmin_from < zmin_to:
+                            # from layer is lower layer
+                            zmin = zmax_from
+                            zmax = zmin_to
+                        else:    
+                            # to layer is lower layer
+                            zmin = zmax_to
+                            zmax = zmin_from
 
                     CSX_port = FDTD.AddLumpedPort(portnum, port_Z0, [xmin, ymin, zmin], [xmax, ymax, zmax], port_direction, voltage, priority=150)
                     # store CSX_port in the port object, for evaluation later
@@ -260,13 +260,13 @@ def setupSimulation (excite_portnumbers,simulation_ports, FDTD, materials_list, 
     # check which layers are actually used, this information is required for meshing in z direction
     # mark if polygon is a via
     if metals_list != None: 
-      for poly in allpolygons.polygons:
-        layernum = poly.layernum
-        metal = metals_list.getbylayernumber(layernum)
-        if metal != None:
-            metal.is_used = True
-            # set polygon via property, used later for meshing
-            poly.is_via = metal.is_via
+        for poly in allpolygons.polygons:
+            layernum = poly.layernum
+            metal = metals_list.getbylayernumber(layernum)
+            if metal != None:
+                metal.is_used = True
+                # set polygon via property, used later for meshing
+                poly.is_via = metal.is_via
 
     # add mesh
     mesh = addMesh_to_CSX (CSX, allpolygons, dielectrics_list, metals_list, refined_cellsize, max_cellsize, margin, air_around, unit, z_mesh_function, xy_mesh_function )
@@ -278,16 +278,33 @@ def setupSimulation (excite_portnumbers,simulation_ports, FDTD, materials_list, 
     return FDTD
 
 
-def runSimulation (excite_portnumbers, FDTD, sim_path, model_basename, preview_only, postprocess_only):
+def runSimulation (excite_portnumbers, FDTD, sim_path, model_basename, preview_only, postprocess_only, do_not_run_if_xml_unchanged=True):
  
     excitation_path = utilities.get_excitation_path (sim_path, excite_portnumbers)
+
+    CSX_file = os.path.join(excitation_path, model_basename + '.xml')
+    CSX_file_tmp = CSX_file + ".tmp"
+
+    xml_unchanged = False
+    
+    if os.path.exists(CSX_file) and do_not_run_if_xml_unchanged:
+        CSX_hash_of_existing = calculate_sha256_of_file(CSX_file)
+        
+        CSX = FDTD.GetCSX()
+        CSX.Write2XML(CSX_file_tmp)
+        CSX_hash_of_current = calculate_sha256_of_file(CSX_file_tmp)
+
+        if CSX_hash_of_existing == CSX_hash_of_current:
+            xml_unchanged = True
+            print("Simulation structure unchanged (compared by XML).  Simulation will not been carried out.")
+        else:
+            print("New simulation structure detected (compared by XML).  If possible, run simulation.")
     
     if not postprocess_only:
         # write CSX file 
-        CSX_file = os.path.join(excitation_path, model_basename + '.xml')
         CSX = FDTD.GetCSX()
         CSX.Write2XML(CSX_file)
-
+        
         # preview model
         if 1 in excite_portnumbers:  # only for first port excitation
             print('Starting AppCSXCAD 3D viewer with file: \n', CSX_file)
@@ -297,7 +314,7 @@ def runSimulation (excite_portnumbers, FDTD, sim_path, model_basename, preview_o
                 print('[ERROR] AppCSXCAD failed to launch. Exit code: ', ret)
                 sys.exit(1)
 
-    if not (preview_only or postprocess_only):  # start simulation 
+    if not (preview_only or postprocess_only or xml_unchanged):  # start simulation 
         print('Starting FDTD simulation for excitation ', str(excite_portnumbers))
         try:
             FDTD.Run(excitation_path)  # DO NOT SPECIFY COMMAND LINE OPTIONS HERE! That will fail for repeated runs with multiple excitations.
@@ -308,6 +325,16 @@ def runSimulation (excite_portnumbers, FDTD, sim_path, model_basename, preview_o
 
 
     return excitation_path
+
+def calculate_sha256_of_file(file_path):
+    import hashlib
+    sha256_hash = hashlib.sha256()
+    with open(file_path, 'rb') as f:
+        for byte_block in iter(lambda: f.read(4096), b""):
+            sha256_hash.update(byte_block)
+    
+    return sha256_hash.hexdigest()
+
 
 
 ######### end of function createSimulation ()  ##########
